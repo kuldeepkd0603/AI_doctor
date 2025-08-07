@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Doctor with Vision and Voice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        input[type=file], input[type=submit] {
+            margin-top: 10px;
+        }
+        #preview {
+            max-width: 100%;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .result {
+            margin-top: 20px;
+        }
+        .audio-player {
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>AI Doctor with Vision and Voice</h1>
+    <form id="uploadForm" action="/process" method="post" enctype="multipart/form-data">
+        <label for="image">Upload Medical Image:</label>
+        <input type="file" name="image" id="image" accept="image/*" required onchange="previewImage(event)">
+        <img id="preview" src="#" alt="Image Preview" style="display: none;">
+
+        <label for="audio">Record Audio:</label>
+        <input type="file" name="audio" id="audio" accept="audio/*" required>
+
+        <input type="submit" value="Submit">
+    </form>
+
+    <div class="loading" id="loading">Processing, please wait...</div>
+
+    <div class="result" id="result" style="display:none">
+        <h3>Speech to Text</h3>
+        <p id="speech_text"></p>
+
+        <h3>Doctor's Response</h3>
+        <p id="doctor_response"></p>
+
+        <h3>Doctor's Voice Response</h3>
+        <audio id="doctor_audio" class="audio-player" controls></audio>
+    </div>
+</div>
+
+<script>
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function () {
+            const output = document.getElementById('preview');
+            output.src = reader.result;
+            output.style.display = 'block';
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    const form = document.getElementById("uploadForm");
+    const loading = document.getElementById("loading");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", function(event) {
+        event.preventDefault();
+        loading.style.display = "block";
+
+        const formData = new FormData(form);
+
+        fetch("/process", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = "none";
+            result.style.display = "block";
+            document.getElementById("speech_text").textContent = data.speech_text;
+            document.getElementById("doctor_response").textContent = data.doctor_response;
+            const audioPlayer = document.getElementById("doctor_audio");
+            audioPlayer.src = data.audio_url;
+            audioPlayer.play();
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            loading.textContent = "An error occurred while processing.";
+        });
+    });
+</script>
+</body>
+</html>
